@@ -1,10 +1,21 @@
 module NoUnsafeDivision exposing (rule)
 
+{-| This module contains rules that have to do with forbiddinmg unsafe division operations
+
+
+# Rules
+
+@docs rule
+
+-}
+
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
 import Review.Rule as Rule exposing (Error, Rule)
 
 
+{-| Forbids unsafe usages of `(/)`, `(//)`, `modBy` and `remainderBy`
+-}
 rule : Rule
 rule =
     Rule.newModuleRuleSchema "NoUnsafeDivision" Nothing

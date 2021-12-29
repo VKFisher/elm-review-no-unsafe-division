@@ -21,14 +21,16 @@ tests =
                     \() ->
                         """module A exposing (..)
 a : Float
-a = 3 / 2"""
+a = 3 / 2
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectNoErrors
                 , test "should report error when dividing by a zero float literal" <|
                     \() ->
                         """module A exposing (..)
 a : Float
-a = 3 / 0"""
+a = 3 / 0
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -44,7 +46,8 @@ b : Float
 b = 1
 
 a : Float
-a = 3 / b"""
+a = 3 / b
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -59,14 +62,16 @@ a = 3 / b"""
                     \() ->
                         """module A exposing (..)
 a : Float
-a = (/) 3 2"""
+a = (/) 3 2
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectNoErrors
                 , test "should report error when dividing by a zero float literal" <|
                     \() ->
                         """module A exposing (..)
 a : Float
-a = (/) 3 0"""
+a = (/) 3 0
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -82,7 +87,8 @@ b : Float
 b = 1
 
 a : Float
-a = (/) 3 b"""
+a = (/) 3 b
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -96,7 +102,8 @@ a = (/) 3 b"""
                         """module A exposing (..)
 
 f : a -> (Float -> Float -> Float)
-f = always (/)"""
+f = always (/)
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -110,7 +117,8 @@ f = always (/)"""
                         """module A exposing (..)
 
 f : Float -> Float
-f = (/) 4"""
+f = (/) 4
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -127,14 +135,16 @@ f = (/) 4"""
                     \() ->
                         """module A exposing (..)
 a : Int
-a = 3 // 2"""
+a = 3 // 2
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectNoErrors
                 , test "should report error when dividing by a zero integer literal" <|
                     \() ->
                         """module A exposing (..)
 a : Int
-a = 3 // 0"""
+a = 3 // 0
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -150,7 +160,8 @@ b : Int
 b = 1
 
 a : Int
-a = 3 // b"""
+a = 3 // b
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -165,14 +176,16 @@ a = 3 // b"""
                     \() ->
                         """module A exposing (..)
 a : Int
-a = (//) 3 2"""
+a = (//) 3 2
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectNoErrors
                 , test "should report error when dividing by a zero integer literal" <|
                     \() ->
                         """module A exposing (..)
 a : Int
-a = (//) 3 0"""
+a = (//) 3 0
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -188,7 +201,8 @@ b : Int
 b = 1
 
 a : Int
-a = (//) 3 b"""
+a = (//) 3 b
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -202,7 +216,8 @@ a = (//) 3 b"""
                         """module A exposing (..)
 
 f : a -> (Float -> Float -> Float)
-f = always (//)"""
+f = always (//)
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -216,7 +231,8 @@ f = always (//)"""
                         """module A exposing (..)
 
 f : Float -> Float
-f = (//) 4"""
+f = (//) 4
+"""
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
                                 [ Review.Test.error
@@ -232,14 +248,16 @@ f = (//) 4"""
                 \() ->
                     """module A exposing (..)
 a : Int
-a = modBy 2 3"""
+a = modBy 2 3
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectNoErrors
             , test "should report error when dividing by a zero integer literal" <|
                 \() ->
                     """module A exposing (..)
 a : Int
-a = modBy 0 3"""
+a = modBy 0 3
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
                             [ Review.Test.error
@@ -255,7 +273,8 @@ b : Int
 b = 1
 
 a : Int
-a = modBy b 3"""
+a = modBy b 3
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
                             [ Review.Test.error
@@ -269,7 +288,8 @@ a = modBy b 3"""
                     """module A exposing (..)
 
 f : a -> (Int -> Int -> Int)
-f = always modBy"""
+f = always modBy
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
                             [ Review.Test.error
@@ -283,7 +303,8 @@ f = always modBy"""
                     """module A exposing (..)
 
 f : Int -> Int
-f = modBy 0"""
+f = modBy 0
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
                             [ Review.Test.error
@@ -297,7 +318,8 @@ f = modBy 0"""
                     """module A exposing (..)
 
 f : Int -> Int
-f = modBy 4"""
+f = modBy 4
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectNoErrors
             ]
@@ -306,14 +328,16 @@ f = modBy 4"""
                 \() ->
                     """module A exposing (..)
 a : Int
-a = remainderBy 2 3"""
+a = remainderBy 2 3
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectNoErrors
             , test "should report error when dividing by a zero integer literal" <|
                 \() ->
                     """module A exposing (..)
 a : Int
-a = remainderBy 0 3"""
+a = remainderBy 0 3
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
                             [ Review.Test.error
@@ -329,7 +353,8 @@ b : Int
 b = 1
 
 a : Int
-a = remainderBy b 3"""
+a = remainderBy b 3
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
                             [ Review.Test.error
@@ -343,7 +368,8 @@ a = remainderBy b 3"""
                     """module A exposing (..)
 
 f : a -> (Int -> Int -> Int)
-f = always remainderBy"""
+f = always remainderBy
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
                             [ Review.Test.error
@@ -357,7 +383,8 @@ f = always remainderBy"""
                     """module A exposing (..)
 
 f : Int -> Int
-f = remainderBy 0"""
+f = remainderBy 0
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
                             [ Review.Test.error
@@ -371,7 +398,8 @@ f = remainderBy 0"""
                     """module A exposing (..)
 
 f : Int -> Int
-f = remainderBy 4"""
+f = remainderBy 4
+"""
                         |> Review.Test.run rule
                         |> Review.Test.expectNoErrors
             ]

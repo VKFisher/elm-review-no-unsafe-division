@@ -18,7 +18,6 @@ import NoMissingTypeAnnotation
 import NoMissingTypeAnnotationInLetIn
 import NoPrematureLetComputation
 import NoSimpleLetBody
-import NoTestValuesInProductionCode
 import NoUnoptimizedRecursion
 import NoUnused.CustomTypeConstructorArgs
 import NoUnused.CustomTypeConstructors
@@ -38,8 +37,6 @@ config =
     , NoDebug.TodoOrToString.rule
     , NoUnoptimizedRecursion.rule (NoUnoptimizedRecursion.optOutWithComment "IGNORE TCO")
     , Simplify.rule Simplify.defaults
-    , NoTestValuesInProductionCode.rule
-        (NoTestValuesInProductionCode.startsWith "stub_")
     , NoUnused.CustomTypeConstructors.rule []
     , NoUnused.CustomTypeConstructorArgs.rule
     , NoUnused.Dependencies.rule
