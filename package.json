@@ -1,4 +1,15 @@
 {
+  "scripts": {
+    "test-watch": "elm-test \"src/**/*Test.elm\" --watch",
+    "test": "elm-test \"src/**/*Test.elm\"",
+    "format-fix-all": "elm-format --yes .",
+    "format-validate": "elm-format --validate .",
+    "review": "elm-review",
+    "review-fix-interactive": "elm-review --fix",
+    "review-fix-all": "yes | elm-review --fix-all",
+    "precommit": "npm run format-validate && npm test && npm run review",
+    "precommit-fix": "npm run format-fix-all && npm test && npm run review-fix-all"
+  },
   "dependencies": {
     "elm-format": "^0.8.5",
     "elm-review": "^2.7.0",
