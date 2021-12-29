@@ -15,6 +15,10 @@ rule =
 expressionVisitor : Node Expression -> Maybe (Node Expression) -> ( List (Error {}), Maybe (Node Expression) )
 expressionVisitor node context =
     let
+        divisionOperators : List String
+        divisionOperators =
+            [ "/", "//" ]
+
         noDivisionOperators : String -> Node Expression -> ( List (Error {}), Maybe (Node Expression) )
         noDivisionOperators op errorNode =
             case op of
@@ -50,94 +54,79 @@ expressionVisitor node context =
 
                 _ ->
                     ( [], Just node )
-    in
-    case Node.value node of
-        Expression.OperatorApplication op _ _ right ->
-            case Node.value right of
+
+        -- allow native division functions when the divisor is a non-zero literal value
+        ignoreNonZeroLiterals : Node Expression -> ( List (Error {}), Maybe (Node Expression) ) -> ( List (Error {}), Maybe (Node Expression) )
+        ignoreNonZeroLiterals n result =
+            case Node.value n of
                 Expression.Integer x ->
                     if x == 0 then
-                        noDivisionOperators op node
+                        result
 
                     else
                         ( [], Just node )
 
                 Expression.Floatable x ->
                     if x < 0.0000001 then
-                        noDivisionOperators op node
+                        result
 
                     else
                         ( [], Just node )
 
                 _ ->
-                    noDivisionOperators op node
+                    result
+    in
+    case Node.value node of
+        Expression.OperatorApplication op _ _ right ->
+            if List.member op divisionOperators then
+                ignoreNonZeroLiterals right <| noDivisionOperators op node
+
+            else
+                ( [], Just node )
 
         Expression.PrefixOperator childOp ->
-            case context of
-                Just parentNode ->
-                    case Node.value parentNode of
-                        Expression.Application [ opNode, _, right ] ->
-                            case Node.value opNode of
-                                Expression.PrefixOperator op ->
-                                    case Node.value right of
-                                        Expression.Integer x ->
-                                            if x == 0 then
-                                                noPrefixDivisionOperators op parentNode
+            if List.member childOp divisionOperators then
+                case context of
+                    Just parentNode ->
+                        case Node.value parentNode of
+                            Expression.Application [ opNode, _, right ] ->
+                                case Node.value opNode of
+                                    Expression.PrefixOperator op ->
+                                        ignoreNonZeroLiterals right <| noPrefixDivisionOperators op parentNode
 
-                                            else
-                                                ( [], Just node )
+                                    _ ->
+                                        ( [], Just node )
 
-                                        Expression.Floatable x ->
-                                            if x < 0.0000001 then
-                                                noPrefixDivisionOperators op parentNode
+                            _ ->
+                                noPrefixDivisionOperators childOp node
 
-                                            else
-                                                ( [], Just node )
+                    _ ->
+                        noPrefixDivisionOperators childOp node
 
-                                        _ ->
-                                            noPrefixDivisionOperators op parentNode
-
-                                _ ->
-                                    ( [], Just node )
-
-                        _ ->
-                            noPrefixDivisionOperators childOp node
-
-                _ ->
-                    noPrefixDivisionOperators childOp node
+            else
+                ( [], Just node )
 
         Expression.FunctionOrValue _ childFn ->
-            case context of
-                Just parentNode ->
-                    case Node.value parentNode of
-                        Expression.Application (fnNode :: first :: _) ->
-                            case Node.value fnNode of
-                                Expression.FunctionOrValue _ fn ->
-                                    case Node.value first of
-                                        Expression.Integer x ->
-                                            if x == 0 then
-                                                noDivisionFunctions fn parentNode
+            if List.member childFn [ "modBy", "remainderBy" ] then
+                case context of
+                    Just parentNode ->
+                        case Node.value parentNode of
+                            Expression.Application (fnNode :: first :: _) ->
+                                case Node.value fnNode of
+                                    Expression.FunctionOrValue _ fn ->
+                                        ignoreNonZeroLiterals first <| noDivisionFunctions fn parentNode
 
-                                            else
-                                                ( [], Just node )
+                                    _ ->
+                                        ( [], Just node )
 
-                                        Expression.Floatable x ->
-                                            if x < 0.0000001 then
-                                                noDivisionFunctions fn parentNode
+                            _ ->
+                                noDivisionFunctions childFn node
 
-                                            else
-                                                ( [], Just node )
+                    _ ->
+                        noDivisionFunctions childFn node
 
-                                        _ ->
-                                            noDivisionFunctions fn parentNode
-
-                                _ ->
-                                    ( [], Just node )
-
-                        _ ->
-                            noDivisionFunctions childFn node
-
-                _ ->
-                    noDivisionFunctions childFn node
+            else
+                ( [], Just node )
 
         _ ->
             ( [], Just node )
