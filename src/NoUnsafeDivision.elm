@@ -1,6 +1,6 @@
 module NoUnsafeDivision exposing (rule)
 
-{-| This module contains rules that have to do with forbiddinmg unsafe division operations
+{-| This module contains rules that have to do with forbidding unsafe division operations
 
 
 # Rules

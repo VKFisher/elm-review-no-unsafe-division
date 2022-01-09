@@ -1,7 +1,38 @@
 # elm-review-no-unsafe-division
 
-Provides an [`elm-review`](https://package.elm-lang.org/packages/jfmengels/elm-review/latest/) rule that forbids usages
-of unsafe division functions and operators, specifically `(/)`, `(//)`, `modBy` and `remainderBy`.
+This package provides an [elm-review](https://package.elm-lang.org/packages/jfmengels/elm-review/latest/) rule that forbids most usages of the native division functions and operators (`/`, `//`, `modBy` and `remainderBy`), while still allowing the trivially correct cases where the divisor is a non-zero literal.
+
+## Rationale
+
+When the divisor is 0, the native division functions and operators produce results which can lead to undesired behavior.
+
+The `/` operator can produce values like `NaN` and `Infinity`
+
+```elm
+0 / 0 -> NaN : Float
+2 / 0 -> Infinity : Float
+-2 / 0 -> -Infinity : Float
+```
+
+The `//` operator produces 0, which is a somewhat arbitrary result that might lead to domain logic errors
+
+```elm
+2 // 0 -> 0 : Int
+```
+
+The `modBy` function throws a runtime exception
+
+```elm
+modBy 0 2 -> "Error: Cannot perform mod 0. Division by zero error."
+```
+
+And the `remainderBy` function produces a `NaN` wtih type `Int`, of all things
+
+```elm
+remainderBy 0 2 -> NaN : Int
+```
+
+Using safe alternatives from the [Basics.Extra](https://package.elm-lang.org/packages/elm-community/basics-extra) package forces us to handle these cases explicitely, which reduces the possibility of errors.
 
 ## Configuration
 
