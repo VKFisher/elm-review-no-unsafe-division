@@ -11,6 +11,8 @@ module NoUnsafeDivision exposing (rule)
 
 import Elm.Syntax.Expression as Expression exposing (Expression)
 import Elm.Syntax.Node as Node exposing (Node)
+import Elm.Syntax.Range exposing (Range)
+import Maybe.Extra as ME
 import Review.Rule as Rule exposing (Error, Rule)
 
 
@@ -23,99 +25,90 @@ rule =
         |> Rule.fromModuleRuleSchema
 
 
+type UnsafeOperation
+    = Divide
+    | IntegerDivide
+    | ModBy
+    | RemainderBy
+
+
 expressionVisitor : Node Expression -> Maybe (Node Expression) -> ( List (Error {}), Maybe (Node Expression) )
 expressionVisitor node context =
+    selectUnsafeOperation node context
+        |> Maybe.map (\( op, errNode ) -> unsafeOperationToError op errNode)
+        |> ME.toList
+        |> (\errList -> ( errList, Just node ))
+
+
+selectUnsafeOperation : Node Expression -> Maybe (Node Expression) -> Maybe ( UnsafeOperation, Node Expression )
+selectUnsafeOperation node context =
     let
-        divisionOperators : List String
-        divisionOperators =
-            [ "/", "//" ]
-
-        noDivisionOperators : String -> Node Expression -> ( List (Error {}), Maybe (Node Expression) )
-        noDivisionOperators op errorNode =
-            case op of
+        unsafeOperationFromString : String -> Maybe UnsafeOperation
+        unsafeOperationFromString s =
+            case s of
                 "/" ->
-                    ( [ error errorNode "Use `Basics.Extra.safeDivide` instead of the native `/`" ], Just node )
+                    Just Divide
 
                 "//" ->
-                    ( [ error errorNode "Use `Basics.Extra.safeIntegerDivide` instead of the native `//`" ], Just node )
+                    Just IntegerDivide
 
-                _ ->
-                    ( [], Just errorNode )
-
-        noPrefixDivisionOperators : String -> Node Expression -> ( List (Error {}), Maybe (Node Expression) )
-        noPrefixDivisionOperators op errorNode =
-            case op of
-                "/" ->
-                    ( [ error errorNode "Use `Basics.Extra.safeDivide` instead of the native `(/)`" ], Just node )
-
-                "//" ->
-                    ( [ error errorNode "Use `Basics.Extra.safeIntegerDivide` instead of the native `(//)`" ], Just node )
-
-                _ ->
-                    ( [], Just node )
-
-        noDivisionFunctions : String -> Node Expression -> ( List (Error {}), Maybe (Node Expression) )
-        noDivisionFunctions fnName errorNode =
-            case fnName of
                 "modBy" ->
-                    ( [ error errorNode "Use `Basics.Extra.safeModBy` instead of the native `modBy`" ], Just node )
+                    Just ModBy
 
                 "remainderBy" ->
-                    ( [ error errorNode "Use `Basics.Extra.safeRemainderBy` instead of the native `remainderBy`" ], Just node )
+                    Just RemainderBy
 
                 _ ->
-                    ( [], Just node )
+                    Nothing
 
         -- allow native division functions when the divisor is a non-zero literal value
-        ignoreNonZeroLiterals : Node Expression -> ( List (Error {}), Maybe (Node Expression) ) -> ( List (Error {}), Maybe (Node Expression) )
-        ignoreNonZeroLiterals n result =
+        isNonZeroLiteral : Node Expression -> Bool
+        isNonZeroLiteral n =
             case Node.value n of
                 Expression.Integer x ->
-                    if x == 0 then
-                        result
-
-                    else
-                        ( [], Just node )
+                    x /= 0
 
                 Expression.Floatable x ->
-                    if x < 0.0000001 then
-                        result
-
-                    else
-                        ( [], Just node )
+                    x /= 0
 
                 _ ->
-                    result
+                    False
+
+        excludeNonZeroDivisors : Node Expression -> Maybe a -> Maybe a
+        excludeNonZeroDivisors divisorNode =
+            ME.filter (always <| not <| isNonZeroLiteral divisorNode)
     in
     case Node.value node of
         Expression.OperatorApplication op _ _ right ->
-            if List.member op divisionOperators then
-                ignoreNonZeroLiterals right <| noDivisionOperators op node
-
-            else
-                ( [], Just node )
+            unsafeOperationFromString op
+                |> excludeNonZeroDivisors right
+                |> Maybe.map (\x -> ( x, node ))
 
         Expression.PrefixOperator childOp ->
-            if List.member childOp divisionOperators then
+            if List.member childOp [ "/", "//" ] then
                 case context of
                     Just parentNode ->
                         case Node.value parentNode of
                             Expression.Application [ opNode, _, right ] ->
                                 case Node.value opNode of
                                     Expression.PrefixOperator op ->
-                                        ignoreNonZeroLiterals right <| noPrefixDivisionOperators op parentNode
+                                        unsafeOperationFromString op
+                                            |> excludeNonZeroDivisors right
+                                            |> Maybe.map (\x -> ( x, parentNode ))
 
                                     _ ->
-                                        ( [], Just node )
+                                        Nothing
 
                             _ ->
-                                noPrefixDivisionOperators childOp node
+                                unsafeOperationFromString childOp
+                                    |> Maybe.map (\x -> ( x, node ))
 
                     _ ->
-                        noPrefixDivisionOperators childOp node
+                        unsafeOperationFromString childOp
+                            |> Maybe.map (\x -> ( x, node ))
 
             else
-                ( [], Just node )
+                Nothing
 
         Expression.FunctionOrValue _ childFn ->
             if List.member childFn [ "modBy", "remainderBy" ] then
@@ -125,31 +118,65 @@ expressionVisitor node context =
                             Expression.Application (fnNode :: first :: _) ->
                                 case Node.value fnNode of
                                     Expression.FunctionOrValue _ fn ->
-                                        ignoreNonZeroLiterals first <| noDivisionFunctions fn parentNode
+                                        unsafeOperationFromString fn
+                                            |> excludeNonZeroDivisors first
+                                            |> Maybe.map (\x -> ( x, parentNode ))
 
                                     _ ->
-                                        ( [], Just node )
+                                        Nothing
 
                             _ ->
-                                noDivisionFunctions childFn node
+                                unsafeOperationFromString childFn
+                                    |> Maybe.map (\x -> ( x, node ))
 
                     _ ->
-                        noDivisionFunctions childFn node
+                        unsafeOperationFromString childFn
+                            |> Maybe.map (\x -> ( x, node ))
 
             else
-                ( [], Just node )
+                Nothing
 
         _ ->
-            ( [], Just node )
+            Nothing
 
 
-error : Node Expression -> String -> Error {}
-error node message =
-    Rule.error
-        { message = message
-        , details =
-            [ "Using unsafe division is one of the very few ways to cause a runtime exception in Elm. "
-                ++ "Removing such functions increases our confidence that the compiled program is correct."
-            ]
-        }
-        (Node.range node)
+unsafeOperationToError : UnsafeOperation -> Node Expression -> Error {}
+unsafeOperationToError unsafeOperation node =
+    let
+        data : { message : String, details : List String }
+        data =
+            case unsafeOperation of
+                Divide ->
+                    { message = "Use `Basics.Extra.safeDivide` instead of the native `/`"
+                    , details =
+                        [ "Using the native division operator can result in values like `NaN` or `Infinity`, which may lead to unwanted behavior."
+                        ]
+                    }
+
+                IntegerDivide ->
+                    { message = "Use `Basics.Extra.safeIntegerDivide` instead of the native `//`"
+                    , details =
+                        [ "`x // 0` produces 0, which is a somewhat arbitrary result and may lead to unwanted behavior in your code."
+                        , "In cases where you do want the result to be 0, it is better to define it explicitly through `Maybe.withDefault 0 <| safeIntegerDivide x y`."
+                        ]
+                    }
+
+                ModBy ->
+                    { message = "Use `Basics.Extra.safeModBy` instead of the native `modBy`"
+                    , details =
+                        [ "`modBy 0 x` is one of the very few ways to cause a runtime exception in Elm."
+                        ]
+                    }
+
+                RemainderBy ->
+                    { message = "Use `Basics.Extra.safeRemainderBy` instead of the native `remaiderBy`"
+                    , details =
+                        [ "`remainderBy 0 x` produces `NaN`, which is probably not what you want."
+                        ]
+                    }
+
+        range : Range
+        range =
+            Node.range node
+    in
+    Rule.error data range
