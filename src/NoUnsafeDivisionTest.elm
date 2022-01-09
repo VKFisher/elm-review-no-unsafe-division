@@ -5,11 +5,49 @@ import Review.Test
 import Test exposing (Test, describe, test)
 
 
-defaultDetails : List String
-defaultDetails =
-    List.singleton <|
-        "Using unsafe division is one of the very few ways to cause a runtime exception in Elm. "
-            ++ "Removing such functions increases our confidence that the compiled program is correct."
+expectedDivisionError : String -> Review.Test.ExpectedError
+expectedDivisionError under =
+    Review.Test.error
+        { message = "Use `Basics.Extra.safeDivide` instead of the native `/`"
+        , details =
+            [ "Using the native division operator can result in values like `NaN` or `Infinity`, which may lead to unwanted behavior."
+            ]
+        , under = under
+        }
+
+
+expectedIntegerDivisionError : String -> Review.Test.ExpectedError
+expectedIntegerDivisionError under =
+    Review.Test.error
+        { message = "Use `Basics.Extra.safeIntegerDivide` instead of the native `//`"
+        , details =
+            [ "`x // 0` produces 0, which is a somewhat arbitrary result and may lead to unwanted behavior in your code."
+            , "In cases where you do want the result to be 0, it is better to define it explicitly through `Maybe.withDefault 0 <| safeIntegerDivide x y`."
+            ]
+        , under = under
+        }
+
+
+expectedModByError : String -> Review.Test.ExpectedError
+expectedModByError under =
+    Review.Test.error
+        { message = "Use `Basics.Extra.safeModBy` instead of the native `modBy`"
+        , details =
+            [ "`modBy 0 x` is one of the very few ways to cause a runtime exception in Elm."
+            ]
+        , under = under
+        }
+
+
+expectedRemainderByError : String -> Review.Test.ExpectedError
+expectedRemainderByError under =
+    Review.Test.error
+        { message = "Use `Basics.Extra.safeRemainderBy` instead of the native `remaiderBy`"
+        , details =
+            [ "`remainderBy 0 x` produces `NaN`, which is probably not what you want."
+            ]
+        , under = under
+        }
 
 
 tests : Test
@@ -33,11 +71,7 @@ a = 3 / 0
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeDivide` instead of the native `/`"
-                                    , details = defaultDetails
-                                    , under = "3 / 0"
-                                    }
+                                [ expectedDivisionError "3 / 0"
                                 ]
                 , test "should report error when dividing by a non-literal float value" <|
                     \() ->
@@ -50,11 +84,7 @@ a = 3 / b
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeDivide` instead of the native `/`"
-                                    , details = defaultDetails
-                                    , under = "3 / b"
-                                    }
+                                [ expectedDivisionError "3 / b"
                                 ]
                 ]
             , describe "prefix form"
@@ -74,11 +104,7 @@ a = (/) 3 0
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeDivide` instead of the native `(/)`"
-                                    , details = defaultDetails
-                                    , under = "(/) 3 0"
-                                    }
+                                [ expectedDivisionError "(/) 3 0"
                                 ]
                 , test "should report error when dividing by a non-literal float value" <|
                     \() ->
@@ -91,11 +117,7 @@ a = (/) 3 b
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeDivide` instead of the native `(/)`"
-                                    , details = defaultDetails
-                                    , under = "(/) 3 b"
-                                    }
+                                [ expectedDivisionError "(/) 3 b"
                                 ]
                 , test "should report error when used as an argument" <|
                     \() ->
@@ -106,11 +128,7 @@ f = always (/)
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeDivide` instead of the native `(/)`"
-                                    , details = defaultDetails
-                                    , under = "(/)"
-                                    }
+                                [ expectedDivisionError "(/)"
                                 ]
                 , test "should report error on partial application" <|
                     \() ->
@@ -121,11 +139,7 @@ f = (/) 4
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeDivide` instead of the native `(/)`"
-                                    , details = defaultDetails
-                                    , under = "(/)"
-                                    }
+                                [ expectedDivisionError "(/)"
                                 ]
                 ]
             ]
@@ -147,11 +161,7 @@ a = 3 // 0
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeIntegerDivide` instead of the native `//`"
-                                    , details = defaultDetails
-                                    , under = "3 // 0"
-                                    }
+                                [ expectedIntegerDivisionError "3 // 0"
                                 ]
                 , test "should report error when dividing by a non-literal integer value" <|
                     \() ->
@@ -164,11 +174,7 @@ a = 3 // b
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeIntegerDivide` instead of the native `//`"
-                                    , details = defaultDetails
-                                    , under = "3 // b"
-                                    }
+                                [ expectedIntegerDivisionError "3 // b"
                                 ]
                 ]
             , describe "prefix form"
@@ -188,11 +194,7 @@ a = (//) 3 0
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeIntegerDivide` instead of the native `(//)`"
-                                    , details = defaultDetails
-                                    , under = "(//) 3 0"
-                                    }
+                                [ expectedIntegerDivisionError "(//) 3 0"
                                 ]
                 , test "should report error when dividing by a non-literal integer value" <|
                     \() ->
@@ -205,11 +207,7 @@ a = (//) 3 b
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeIntegerDivide` instead of the native `(//)`"
-                                    , details = defaultDetails
-                                    , under = "(//) 3 b"
-                                    }
+                                [ expectedIntegerDivisionError "(//) 3 b"
                                 ]
                 , test "should report error when used as an argument" <|
                     \() ->
@@ -220,11 +218,7 @@ f = always (//)
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeIntegerDivide` instead of the native `(//)`"
-                                    , details = defaultDetails
-                                    , under = "(//)"
-                                    }
+                                [ expectedIntegerDivisionError "(//)"
                                 ]
                 , test "should report error on partial application" <|
                     \() ->
@@ -235,11 +229,7 @@ f = (//) 4
 """
                             |> Review.Test.run rule
                             |> Review.Test.expectErrors
-                                [ Review.Test.error
-                                    { message = "Use `Basics.Extra.safeIntegerDivide` instead of the native `(//)`"
-                                    , details = defaultDetails
-                                    , under = "(//)"
-                                    }
+                                [ expectedIntegerDivisionError "(//)"
                                 ]
                 ]
             ]
@@ -260,11 +250,7 @@ a = modBy 0 3
 """
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
-                            [ Review.Test.error
-                                { message = "Use `Basics.Extra.safeModBy` instead of the native `modBy`"
-                                , details = defaultDetails
-                                , under = "modBy 0 3"
-                                }
+                            [ expectedModByError "modBy 0 3"
                             ]
             , test "should report error when dividing by a non-literal integer value" <|
                 \() ->
@@ -277,11 +263,7 @@ a = modBy b 3
 """
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
-                            [ Review.Test.error
-                                { message = "Use `Basics.Extra.safeModBy` instead of the native `modBy`"
-                                , details = defaultDetails
-                                , under = "modBy b 3"
-                                }
+                            [ expectedModByError "modBy b 3"
                             ]
             , test "should report error when used as an argument" <|
                 \() ->
@@ -292,11 +274,7 @@ f = always modBy
 """
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
-                            [ Review.Test.error
-                                { message = "Use `Basics.Extra.safeModBy` instead of the native `modBy`"
-                                , details = defaultDetails
-                                , under = "modBy"
-                                }
+                            [ expectedModByError "modBy"
                             ]
             , test "should report error on partial application to zero literal" <|
                 \() ->
@@ -307,11 +285,7 @@ f = modBy 0
 """
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
-                            [ Review.Test.error
-                                { message = "Use `Basics.Extra.safeModBy` instead of the native `modBy`"
-                                , details = defaultDetails
-                                , under = "modBy 0"
-                                }
+                            [ expectedModByError "modBy 0"
                             ]
             , test "should not report error on partial application to non-zero literal" <|
                 \() ->
@@ -340,11 +314,7 @@ a = remainderBy 0 3
 """
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
-                            [ Review.Test.error
-                                { message = "Use `Basics.Extra.safeRemainderBy` instead of the native `remainderBy`"
-                                , details = defaultDetails
-                                , under = "remainderBy 0 3"
-                                }
+                            [ expectedRemainderByError "remainderBy 0 3"
                             ]
             , test "should report error when dividing by a non-literal integer value" <|
                 \() ->
@@ -357,11 +327,7 @@ a = remainderBy b 3
 """
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
-                            [ Review.Test.error
-                                { message = "Use `Basics.Extra.safeRemainderBy` instead of the native `remainderBy`"
-                                , details = defaultDetails
-                                , under = "remainderBy b 3"
-                                }
+                            [ expectedRemainderByError "remainderBy b 3"
                             ]
             , test "should report error when used as an argument" <|
                 \() ->
@@ -372,11 +338,7 @@ f = always remainderBy
 """
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
-                            [ Review.Test.error
-                                { message = "Use `Basics.Extra.safeRemainderBy` instead of the native `remainderBy`"
-                                , details = defaultDetails
-                                , under = "remainderBy"
-                                }
+                            [ expectedRemainderByError "remainderBy"
                             ]
             , test "should report error on partial application" <|
                 \() ->
@@ -387,11 +349,7 @@ f = remainderBy 0
 """
                         |> Review.Test.run rule
                         |> Review.Test.expectErrors
-                            [ Review.Test.error
-                                { message = "Use `Basics.Extra.safeRemainderBy` instead of the native `remainderBy`"
-                                , details = defaultDetails
-                                , under = "remainderBy 0"
-                                }
+                            [ expectedRemainderByError "remainderBy 0"
                             ]
             , test "should not report error on partial application to non-zero literal" <|
                 \() ->
