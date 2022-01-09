@@ -34,10 +34,18 @@ type UnsafeOperation
 
 expressionVisitor : Node Expression -> Maybe (Node Expression) -> ( List (Error {}), Maybe (Node Expression) )
 expressionVisitor node context =
-    selectUnsafeOperation node context
-        |> Maybe.map (\( op, errNode ) -> unsafeOperationToError op errNode)
-        |> ME.toList
-        |> (\errList -> ( errList, Just node ))
+    let
+        errList : List (Error {})
+        errList =
+            selectUnsafeOperation node context
+                |> Maybe.map (\( op, errNode ) -> unsafeOperationToError op errNode)
+                |> ME.toList
+
+        newContext : Maybe (Node Expression)
+        newContext =
+            Just node
+    in
+    ( errList, newContext )
 
 
 selectUnsafeOperation : Node Expression -> Maybe (Node Expression) -> Maybe ( UnsafeOperation, Node Expression )
