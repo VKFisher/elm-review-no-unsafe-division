@@ -4,7 +4,7 @@ This package provides an [elm-review](https://package.elm-lang.org/packages/jfme
 
 ## Rationale
 
-When the divisor is 0, the native division functions and operators produce results which can lead to undesired behavior.
+When the divisor is 0, the native division functions and operators produce results that can lead to undesired behavior.
 
 The `/` operator can produce values like `NaN` and `Infinity`
 
@@ -26,13 +26,13 @@ The `modBy` function throws a runtime exception
 modBy 0 2 -> "Error: Cannot perform mod 0. Division by zero error."
 ```
 
-And the `remainderBy` function produces a `NaN` wtih type `Int`, of all things
+And the `remainderBy` function produces a `NaN` with type `Int`, of all things
 
 ```elm
 remainderBy 0 2 -> NaN : Int
 ```
 
-Using safe alternatives from the [Basics.Extra](https://package.elm-lang.org/packages/elm-community/basics-extra) package forces us to handle these cases explicitely, which reduces the possibility of errors.
+Using safe alternatives from the [Basics.Extra](https://package.elm-lang.org/packages/elm-community/basics-extra) package forces us to handle these cases explicitly, which reduces the possibility of errors.
 
 ## Configuration
 
