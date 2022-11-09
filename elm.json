@@ -3,7 +3,7 @@
     "name": "vkfisher/elm-review-no-unsafe-division",
     "summary": "Forbid division operations that produce unwanted values or runtime exceptions",
     "license": "MIT",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "exposed-modules": [
         "NoUnsafeDivision"
     ],
